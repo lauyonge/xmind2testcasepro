@@ -176,6 +176,8 @@
                 <th width="15%">Preconditions (if any)</th>
                 <th width="25%">Steps</th>
                 <th width="40%">Expected results</th>
+                <th width="8%">用例类型</th>        <!-- 新增 -->
+                <th width="8%">适用阶段</th>        <!-- 新增 -->
             </tr>
             <tr>
                 <th></th>
@@ -192,6 +194,8 @@
                 <th><input type="text" placeholder="前置条件"></th>
                 <th><input type="text" placeholder="步骤"></th>
                 <th><input type="text" placeholder="预期结果"></th>
+                <th><input type="text" placeholder="用例类型"></th>   <!-- 新增筛选 -->
+                <th><input type="text" placeholder="适用阶段"></th>   <!-- 新增筛选 -->
             </tr>
         </thead>
         <tbody>
@@ -206,6 +210,9 @@
                     <span class="long-name-info">Warn: test name might be too long: {{ test.name|length }}!</span> {% endif %}
                 </td>
                 <td>{{ test.preconditions | replace('\n','<br>') |safe }}</td>
+                <td>{{ test.testcase_type }}</td>                    <!-- 新增 -->
+                <td>{{ test.apply_phase }}</td>                      <!-- 新增 -->
+
                 <td>
                     {% if test.steps %}
                     <ol>
@@ -332,7 +339,26 @@
 
                 rows.forEach(row => {
                     const cells = row.getElementsByTagName('td');
+                    // cells 索引需要调整：
+                    // cells[0] - 复选框
+                    // cells[1] - 序号
+                    // cells[2] - 优先级
+                    // cells[3] - 标题
+                    // cells[4] - 前置条件
+                    // cells[5] - 用例类型 (新增)
+                    // cells[6] - 适用阶段 (新增)
+                    // cells[7] - 步骤
+                    // cells[8] - 预期结果
                     let shouldShow = true;
+
+                    // 检查用例类型筛选
+                    if (typeFilterValue && !cells[5].innerText.toLowerCase().includes(typeFilterValue)) {
+                        shouldShow = false;
+                    }
+                    // 检查适用阶段筛选
+                    if (phaseFilterValue && !cells[6].innerText.toLowerCase().includes(phaseFilterValue)) {
+                        shouldShow = false;
+                    }
 
                     // 检查优先级过滤
                     if (selectedPriorities.size > 0) {
@@ -432,7 +458,7 @@
                 let csv = [];
 
                 // 添加表头
-                const headers = ['#', 'Priority', 'Case Title & Description', 'Preconditions (if any)', 'Steps', 'Expected results'];
+                const headers = ['#', 'Priority', 'Case Title & Description', 'Preconditions (if any)', 'Steps', 'Expected results', '用例类型', '适用阶段'];
                 csv.push(headers.map(header => '"' + header + '"').join(','));
 
                 // 添加数据行
@@ -443,6 +469,11 @@
                     let cols = Array.from(row.cells).map((cell, index) => {
                         // 跳过复选框列
                         if (index === 0) return '';
+
+                        // 处理新列
+                        if (index === 5 || index === 6) { // 用例类型和适用阶段
+                            return '"' + cell.innerText.trim() + '"';
+                        }
 
                         // 提取列表项并保留序号
                         const listItems = cell.querySelectorAll('li');

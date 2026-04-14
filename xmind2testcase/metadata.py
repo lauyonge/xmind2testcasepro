@@ -52,7 +52,7 @@ class TestSuite(object):
 class TestCase(object):
 
     def __init__(self, name='', category='', version=1, summary='', preconditions='', execution_type=1, importance=2,
-                 estimated_exec_duration=3, status=7, result=0, steps=None):
+                 estimated_exec_duration=3, status=7, result=0, steps=None, testcase_type='功能测试', apply_phase='功能测试阶段'):
         """
         TestCase
         :param name: test case name  > topic title
@@ -78,6 +78,8 @@ class TestCase(object):
         self.status = status
         self.result = result
         self.steps = steps
+        self.testcase_type = testcase_type      # 新增
+        self.apply_phase = apply_phase          # 新增
 
     def to_dict(self):
         data = {
@@ -91,7 +93,9 @@ class TestCase(object):
             'estimated_exec_duration': self.estimated_exec_duration,  # TODO(devin): get estimated content
             'status': self.status,  # TODO(devin): get status content
             'result': self.result,
-            'steps': []
+            'steps': [],
+            'testcase_type': self.testcase_type,  # 新增
+            'apply_phase': self.apply_phase       # 新增
         }
 
         if self.steps:
@@ -130,6 +134,23 @@ class TestStep(object):
         return data
 
 
+def get_apply_phase(labels):
+    """从标签中提取适用阶段"""
+    phase_tag = const.APPLY_PHASE_TAG
+    for label in labels:
+        if label.startswith(phase_tag):
+            if ':' in label:
+                phase_value = label.split(':', 1)[1].strip()
+            elif '：' in label:
+                phase_value = label.split('：', 1)[1].strip()
+            else:
+                continue
+
+            if phase_value in const.APPLY_PHASE_MAPPING:
+                return phase_value
+    return '功能测试阶段'  # 默认值
+
+
 class AttachedTopicAttribute:
     def __init__(self, attached_topic):
         self.id: str = attached_topic.get('id', '')
@@ -149,6 +170,8 @@ class AttachedTopicAttribute:
         self.is_teststep: bool = self.get_attached_topic_type_by_labels(const.TESTSTEP_TAG, self.labels)
         self.is_expect_result: bool = self.get_attached_topic_type_by_labels(const.EXPECT_RESULT_TAG, self.labels)
         self.importance: int = self.get_importance_by_labels(const.IMPORTANCE_TAGS, self.labels, self.markers)
+        self.testcase_type: str = self.get_testcase_type(self.labels)
+        self.apply_phase: str = get_apply_phase(self.labels)
 
     def get_notes(self, notes):
         notes_content = ''
@@ -246,3 +269,21 @@ class AttachedTopicAttribute:
                 preconditions.append(sub_attached_topic.title)
 
         return preconditions
+
+    def get_testcase_type(self, labels):
+        """从标签中提取用例类型"""
+        type_tag = const.TESTCASE_TYPE_TAG
+        for label in labels:
+            if label.startswith(type_tag):
+                # 支持格式: "用例类型:功能测试" 或 "用例类型：功能测试"
+                if ':' in label:
+                    type_value = label.split(':', 1)[1].strip()
+                elif '：' in label:
+                    type_value = label.split('：', 1)[1].strip()
+                else:
+                    continue
+    
+                # 验证是否在枚举范围内
+                if type_value in const.TESTCASE_TYPE_MAPPING:
+                    return type_value
+        return '功能测试'  # 默认值
