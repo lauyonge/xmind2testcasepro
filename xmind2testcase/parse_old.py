@@ -134,6 +134,9 @@ class ParseOld(ParseXmind):
         testcase.summary = summary if summary else testcase.name
         testcase.execution_type = self.get_execution_type(topics)
         testcase.importance = self.get_priority(case_dict) or 2
+        # 提取用例类型和适用阶段
+        testcase.testcase_type = self.get_testcase_type_from_labels(topics)
+        testcase.apply_phase = self.get_apply_phase_from_labels(topics)
 
         step_dict_list = case_dict.get('topics', [])
         if step_dict_list:
@@ -243,3 +246,31 @@ class ParseOld(ParseXmind):
             result = 0
 
         return result
+
+    def get_testcase_type_from_labels(self, topics):
+        """从旧版XMind标签中提取用例类型"""
+        for topic in topics:
+            labels = topic.get('labels', [])
+            if isinstance(labels, str):
+                labels = [labels]
+            for label in labels:
+                if label.startswith(const.TESTCASE_TYPE_TAG):
+                    if ':' in label:
+                        return label.split(':', 1)[1].strip()
+                    elif '：' in label:
+                        return label.split('：', 1)[1].strip()
+        return '功能测试'
+
+    def get_apply_phase_from_labels(self, topics):
+        """从旧版XMind标签中提取适用阶段"""
+        for topic in topics:
+            labels = topic.get('labels', [])
+            if isinstance(labels, str):
+                labels = [labels]
+            for label in labels:
+                if label.startswith(const.APPLY_PHASE_TAG):
+                    if ':' in label:
+                        return label.split(':', 1)[1].strip()
+                    elif '：' in label:
+                        return label.split('：', 1)[1].strip()
+        return '功能测试阶段'

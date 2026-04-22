@@ -22,13 +22,32 @@
         table {
             border-collapse: collapse;
             width: 100%;
+            table-layout: fixed;            /* 固定表格布局 */
+            min-width: 1200px;              /* 根据你的需要调整 */
         }
+
+        /* 表格列宽定义 */
+        .col-checkbox { width: 2%; }
+        .col-index { width: 3%; }
+        .col-priority { width: 5%; }
+        .col-product { width: 7%; }         /* 所属产品 */
+        .col-module { width: 7%; }          /* 所属模块 */
+        .col-title { width: 12%; }
+        .col-preconditions { width: 7%; }
+        .col-type { width: 6%; }
+        .col-phase { width: 6%; }
+        .col-steps { width: 18%; }
+        .col-expected { width: 27%; }
         
-        th,
-        td {
+        th, td {
             border: 1px solid #ddd;
             padding: 8px;
             text-align: left;
+            word-wrap: break-word;          /* 兼容旧版浏览器 */
+            white-space: normal;            /* 允许换行 */
+            th, td {
+                word-break: break-word;     /* 只在必要时换行，比 break-all 更温和 */
+            }
         }
         
         th {
@@ -93,13 +112,16 @@
             position: absolute;
             top: 100%;
             left: 0;
-            right: 0;
+            min-width: 150px;                   /* 设置最小宽度 */
+            width: max-content;                 /* 宽度根据内容自适应 */
+            max-width: 250px;                   /* 最大宽度限制 */
             background: rgb(160, 157, 157);
             border: 1px solid #ddd;
             border-top: none;
             border-radius: 0 0 4px 4px;
             max-height: 200px;
             overflow-y: auto;
+            overflow-x: hidden;                 /* 横向隐藏滚动条 */
             z-index: 1000;
             display: none;
             box-shadow: 0 2px 4px rgba(224, 79, 79, 0.463);
@@ -164,70 +186,85 @@
         </div>
     </div>
 
-    <table class="pure-table tests-table" id="myTable">
-        <thead>
-            <tr>
-                <th class="checkbox-cell">
-                    <input type="checkbox" id="selectAllCheckbox">
-                </th>
-                <th width="5%">#</th>
-                <th width="5%">Priority</th>
-                <th width="15%">Case Title & Description</th>
-                <th width="15%">Preconditions (if any)</th>
-                <th width="25%">Steps</th>
-                <th width="40%">Expected results</th>
-            </tr>
-            <tr>
-                <th></th>
-                <th></th>
-                <th>
-                    <div class="priority-filter">
-                        <input type="text" placeholder="优先级" readonly id="priorityFilterInput">
-                        <div class="priority-dropdown" id="priorityDropdown">
-                            <!-- 优先级选项将通过JavaScript动态生成 -->
+    <div>
+        <table class="pure-table tests-table" id="myTable">
+            <thead>
+                <tr>
+                    <th class="checkbox-cell">
+                        <input type="checkbox" id="selectAllCheckbox">
+                    </th>
+                    <th class="col-index">#</th>
+                    <th class="col-priority">优先级</th>            <!-- Priority -->
+                    <th class="col-priority">所属产品</th>          <!-- Product -->
+                    <th class="col-priority">所属模块</th>          <!-- Module -->
+                    <th class="col-title">测试用例</th>             <!-- Case Title & Description -->
+                    <th class="col-preconditions">前置条件</th>     <!-- Preconditions (if any) -->
+                    <th class="col-type">用例类型</th>              <!-- Testcase type -->
+                    <th class="col-phase">适用阶段</th>             <!-- Apply phase -->
+                    <th class="col-steps">执行步骤</th>             <!-- Steps -->
+                    <th class="col-expected">预期结果</th>          <!-- Expected results -->
+                </tr>
+                <tr>
+                    <th></th>                                                                               <!-- 复选框 -->
+                    <th></th>                                                                               <!-- 序号 -->
+                    <th>                                                                                    <!-- 优先级 -->
+                        <div class="priority-filter">
+                            <input type="text" placeholder="优先级" readonly id="priorityFilterInput">
+                            <div class="priority-dropdown" id="priorityDropdown">
+                                <!-- 优先级选项将通过JavaScript动态生成 -->
+                            </div>
                         </div>
-                    </div>
-                </th>
-                <th><input type="text" placeholder="标题"></th>
-                <th><input type="text" placeholder="前置条件"></th>
-                <th><input type="text" placeholder="步骤"></th>
-                <th><input type="text" placeholder="预期结果"></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for test in suite %}
-            <tr>
-                <td class="checkbox-cell">
-                    <input type="checkbox" class="row-checkbox" data-index="{{ loop.index0 }}">
-                </td>
-                <td>{{ loop.index }}</td>
-                <td>{{ test.priority }}</td>
-                <td {% if test.name|length>100 %}class="long-name" {% endif %}>{{ test.name }} {% if test.name|length>100 %}
-                    <span class="long-name-info">Warn: test name might be too long: {{ test.name|length }}!</span> {% endif %}
-                </td>
-                <td>{{ test.preconditions | replace('\n','<br>') |safe }}</td>
-                <td>
-                    {% if test.steps %}
-                    <ol>
-                        {% for step in test.steps %}
-                        <li>{{ step.actions }}</li>
-                        {% endfor %}
-                    </ol>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if test.steps %}
-                    <ol>
-                        {% for step in test.steps %} {% if step.expectedresults_v2 %}
-                        <li>{{ step.expectedresults_v2 }}</li>
-                        {% endif %} {% endfor %}
-                    </ol>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                    </th>                                                                                   <!-- 优先级 -->
+                    <th><input type="text" placeholder="所属产品"></th>
+                    <th><input type="text" placeholder="所属模块"></th>
+                    <th><input type="text" placeholder="用例标题或描述"></th>
+                    <th><input type="text" placeholder="前置条件"></th>
+                    <th><input type="text" placeholder="用例类型"></th>                                      
+                    <th><input type="text" placeholder="适用阶段"></th>                                      
+                    <th><input type="text" placeholder="执行步骤"></th>
+                    <th><input type="text" placeholder="预期结果"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for test in suite %}
+                <tr>
+                    <td class="checkbox-cell">
+                        <input type="checkbox" class="row-checkbox" data-index="{{ loop.index0 }}">
+                    </td>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ test.priority }}</td>
+                    <td>{{ test.product }}</td>                 <!-- 所属产品 -->
+                    <td>{{ test.module }}</td>                  <!-- 所属模块 -->
+                    <td {% if test.name|length>100 %}class="long-name" {% endif %}>{{ test.name }} {% if test.name|length>100 %}
+                        <span class="long-name-info">Warn: test name might be too long: {{ test.name|length }}!</span> {% endif %}
+                    </td>
+                    <td>{{ test.preconditions | replace('\n','<br>') |safe }}</td>
+                    <td>{{ test.testcase_type }}</td>           <!-- 用例类型 -->
+                    <td>{{ test.apply_phase }}</td>             <!-- 适用阶段 -->
+
+                    <td>
+                        {% if test.steps %}
+                        <ol>
+                            {% for step in test.steps %}
+                            <li>{{ step.actions }}</li>
+                            {% endfor %}
+                        </ol>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if test.steps %}
+                        <ol>
+                            {% for step in test.steps %} {% if step.expectedresults_v2 %}
+                            <li>{{ step.expectedresults_v2 }}</li>
+                            {% endif %} {% endfor %}
+                        </ol>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 
     <div class="footer">
         <a href="{{ url_for('static', filename='guide/index.html') }}" target="_blank">User Guide</a> |
@@ -327,54 +364,92 @@
 
             // 定义筛选函数
             function filterTable() {
-                const inputs = document.querySelectorAll('input[type="text"]');
+                const allinputs = document.querySelectorAll('input[type="text"]');
                 const rows = document.querySelectorAll('#myTable tbody tr');
+
+                // 过滤出真正的筛选输入框（排除优先级那个只读输入框）
+                const filterInputs = Array.from(allInputs).filter(input => input !== priorityFilterInput);
 
                 rows.forEach(row => {
                     const cells = row.getElementsByTagName('td');
                     let shouldShow = true;
 
-                    // 检查优先级过滤
+                    // 优先级筛选
                     if (selectedPriorities.size > 0) {
-                        const priority = cells[2].textContent.trim();
+                        const priority = cells[2].textContent.trim();   // 优先级在第2列
                         if (!selectedPriorities.has(priority)) {
-                            shouldShow = false;
+                            shouldShow = false;                         // 优先级不匹配 → 隐藏
                         }
                     }
 
-                    // 检查其他列的文本过滤
-                    for (let i = 0; i < inputs.length; i++) {
-                        if (inputs[i] === priorityFilterInput) continue; // 跳过优先级输入框
+                    // 文本输入框筛选
+                    if (shouldShow) {
+                        for (let idx = 0; idx < filterInputs.length; idx++) {
+                            const input = filterInputs[idx];
+                            const filter = input.value.toLowerCase().trim();
 
-                        const filter = inputs[i].value.toLowerCase();
-                        if (filter) {
-                            // 调整列索引：跳过复选框列，优先级列单独处理
+                            if (!filter) continue;                      // 空输入框->跳过
+
+                            // cells 索引对照
+                            // cells[0] - 复选框
+                            // cells[1] - 序号
+                            // cells[2] - 优先级
+                            // cells[3] - 所属产品
+                            // cells[4] - 所属模块
+                            // cells[5] - 标题
+                            // cells[6] - 前置条件
+                            // cells[7] - 用例类型
+                            // cells[8] - 适用阶段
+                            // cells[9] - 执行步骤
+                            // cells[10] - 预期结果
+
+                            // 根据筛选输入框的顺序确定列索引
+                            // filterInputs[0] = 所属产品 → cellIndex=3
+                            // filterInputs[1] = 所属模块 → cellIndex=4
+                            // filterInputs[2] = 标题     → cellIndex=5
+                            // filterInputs[3] = 前置条件 → cellIndex=6
+                            // filterInputs[4] = 用例类型 → cellIndex=7
+                            // filterInputs[5] = 适用阶段 → cellIndex=8
+                            // filterInputs[6] = 执行步骤 → cellIndex=9
+                            // filterInputs[7] = 预期结果 → cellIndex=10
                             let cellIndex;
-                            if (i === 0) { // 标题列
+                            if (idx === 0) {          // 所属产品列
                                 cellIndex = 3;
-                            } else if (i === 1) { // 前置条件列
+                            } else if (idx === 1) {   // 所属模块列
                                 cellIndex = 4;
-                            } else if (i === 2) { // 步骤列
+                            } else if (idx === 2) {   // 标题列
                                 cellIndex = 5;
-                            } else if (i === 3) { // 预期结果列
+                            } else if (idx === 3) {   // 前置条件列
                                 cellIndex = 6;
+                            } else if (idx === 4) {   // 用例类型列
+                                cellIndex = 7
+                            } else if (idx === 5) {   // 适用阶段列
+                                cellIndex = 8
+                            } else if (idx === 6) {   // 执行步骤列
+                                cellIndex = 9
+                            } else if (idx === 7) {   // 预期结果列
+                                cellIndex = 10
+                            } else {
+                                continue;
                             }
 
-                            const cellText = cells[cellIndex].innerText.toLowerCase();
+                            // 获取单元格文本并比较
+                            // 不包含关键词 → 隐藏
+                            const cellText = cells[cellIndex]?.innerText.toLowerCase() || '';
                             if (!cellText.includes(filter)) {
                                 shouldShow = false;
-                                break;
+                                break;                                  // 一旦不匹配，退出循环
                             }
                         }
                     }
 
-                    row.style.display = shouldShow ? '' : 'none';
-                });
-            }
+                row.style.display = shouldShow ? '' : 'none';
+            });
+        }
 
             // 绑定输入框的事件（除了优先级输入框）
-            const inputs = document.querySelectorAll('input[type="text"]');
-            inputs.forEach((input, index) => {
+            const allInputs = document.querySelectorAll('input[type="text"]');
+            allInputs.forEach((input) => {
                 if (input !== priorityFilterInput) {
                     input.addEventListener('keyup', () => filterTable());
                 }
@@ -432,7 +507,7 @@
                 let csv = [];
 
                 // 添加表头
-                const headers = ['#', 'Priority', 'Case Title & Description', 'Preconditions (if any)', 'Steps', 'Expected results'];
+                const headers =  ['#', '优先级', '所属产品', '所属模块', '测试用例', '前置条件', '用例类型', '适用阶段', '执行步骤', '预期结果'];
                 csv.push(headers.map(header => '"' + header + '"').join(','));
 
                 // 添加数据行

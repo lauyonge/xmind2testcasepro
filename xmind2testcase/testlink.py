@@ -150,6 +150,9 @@ def _convert_importance(value):
         return mapping[value]
     else:
         return '2'
+    """将优先级原样传递给 TestLink"""
+    # 不做映射，直接返回
+    # return str(value)
 
 
 if __name__ == '__main__':

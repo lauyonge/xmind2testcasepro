@@ -3,6 +3,9 @@
 import csv
 import logging
 import os
+
+from numpy.ma.core import product
+
 from xmind2testcase.utils import get_absolute_path
 from xmind2testcase.services import get_testcase_list
 
@@ -19,7 +22,7 @@ def xmind_to_zentao_csv_file(xmind_file):
     logging.info('Start converting XMind file(%s) to zentao file...', xmind_file)
     testcases = get_testcase_list(xmind_file)
 
-    fileheader = ["所属模块", "用例标题", "前置条件", "步骤", "预期", "关键词", "优先级", "用例类型", "适用阶段"]
+    fileheader = ["所属产品", "所属模块", "用例名称", "前置条件", "步骤", "预期", "关键词", "优先级", "执行类型", "用例类型", "适用阶段"]
     zentao_testcase_rows = [fileheader]
     for testcase in testcases:
         row = gen_a_testcase_row(testcase)
@@ -40,15 +43,26 @@ def xmind_to_zentao_csv_file(xmind_file):
 
 
 def gen_a_testcase_row(testcase_dict):
-    case_module = gen_case_module(testcase_dict['suite'])
+    # 提取产品名（从 suite 中分离）
+    suite_full = testcase_dict.get('suite', '')
+    if '::' in suite_full:
+        product = suite_full.split('::', 1)[0]
+        case_module = suite_full.split('::', 1)[1]
+    else:
+        product = testcase_dict.get('product', '')
+        case_module = suite_full
+
+
+    # case_module = gen_case_module(testcase_dict['suite'])
     case_title = testcase_dict['name']
     case_precontion = testcase_dict['preconditions']
     case_step, case_expected_result = gen_case_step_and_expected_result(testcase_dict['steps'])
     case_keyword = ''
     case_priority = gen_case_priority(testcase_dict['importance'])
-    case_type = gen_case_type(testcase_dict['execution_type'])
-    case_apply_phase = '迭代测试'
-    row = [case_module, case_title, case_precontion, case_step, case_expected_result, case_keyword, case_priority, case_type, case_apply_phase]
+    case_type  = testcase_dict.get('testcase_type', '功能测试')  # 使用新字段
+    case_apply_phase = testcase_dict.get('apply_phase', '功能测试阶段')  # 使用新字段
+    execution_type = gen_execution_type(testcase_dict['execution_type'])
+    row = [product, case_module, case_title, case_precontion, case_step, case_expected_result, case_keyword, case_priority, execution_type, case_type, case_apply_phase]
     return row
 
 
@@ -75,19 +89,15 @@ def gen_case_step_and_expected_result(steps):
 
 
 def gen_case_priority(priority):
-    mapping = {1: '高', 2: '中', 3: '低'}
-    if priority in mapping.keys():
-        return mapping[priority]
-    else:
-        return '中'
+    """将优先级原样传递给禅道"""
+    # 不做任何转换，直接返回数值字符串
+    return priority
 
 
-def gen_case_type(case_type):
+def gen_execution_type(case_type):
     mapping = {1: '手动', 2: '自动'}
     if case_type in mapping.keys():
-        return mapping[case_type]
-    else:
-        return '手动'
+        return mapping.get(case_type, '手动')
 
 
 if __name__ == '__main__':

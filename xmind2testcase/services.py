@@ -100,12 +100,12 @@ def get_testcase_list(xmind_file):
     testcases = []
 
     for testsuite in testsuites:
-        product = testsuite.name
-        for suite in testsuite.sub_suites:
+        product = testsuite.name                                    # 产品名称（中心主题）
+        for suite in testsuite.sub_suites:                          # 第一层子主题 = 模块
             for case in suite.testcase_list:
                 case_data = case.to_dict()
                 case_data['product'] = product
-                case_data['suite'] = f"{product}::{suite.name}"
+                case_data['suite'] = f"{product}::{suite.name}"     # 所属模块parse_testsuite
                 testcases.append(case_data)
 
     logging.info('Convert XMind file(%s) to testcases dict data successfully!', xmind_file)

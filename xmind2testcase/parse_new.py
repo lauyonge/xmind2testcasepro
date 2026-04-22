@@ -37,7 +37,7 @@ class ParseNew(ParseXmind):
     def parse_testsuite(self, suite_dict):
         testsuite = TestSuite()
         suite_attached_topic = AttachedTopicAttribute(suite_dict)
-        testsuite.name = suite_attached_topic.title
+        testsuite.name = suite_attached_topic.title                     # 模块名
         testsuite.details = suite_attached_topic.note
         testsuite.testcase_list = []
         # sub_attached_topics：层级2
@@ -74,6 +74,8 @@ class ParseNew(ParseXmind):
         preconditions = self.gen_testcase_preconditions(cur_attached_topic.sub_attached_topics)
         testcase.preconditions = preconditions if preconditions else ''
         testcase.steps = self.parse_test_steps(cur_attached_topic.sub_attached_topics)
+        testcase.testcase_type = cur_attached_topic.testcase_type  # 新增
+        testcase.apply_phase = cur_attached_topic.apply_phase      # 新增
         return testcase
 
     def gen_testcase_category(self, attached_topics):
