@@ -94,8 +94,8 @@ class TestCase(object):
             'status': self.status,  # TODO(devin): get status content
             'result': self.result,
             'steps': [],
-            'testcase_type': self.testcase_type,  # 新增
-            'apply_phase': self.apply_phase       # 新增
+            'testcase_type': self.testcase_type,    # 新增
+            'apply_phase': self.apply_phase        # 新增
         }
 
         if self.steps:
@@ -136,6 +136,7 @@ class TestStep(object):
 
 def get_apply_phase(labels):
     """从标签中提取适用阶段"""
+    # 1. 优先检查是否有"适用阶段:"标签（显式指定）
     phase_tag = const.APPLY_PHASE_TAG
     for label in labels:
         if label.startswith(phase_tag):
@@ -146,9 +147,16 @@ def get_apply_phase(labels):
             else:
                 continue
 
-            if phase_value in const.APPLY_PHASE_MAPPING:
+            if phase_value in const.APPLY_PHASE_ENUM:
                 return phase_value
-    return '功能测试阶段'  # 默认值
+
+    # 2. 直接匹配枚举值
+    for label in labels:
+        if label in const.APPLY_PHASE_ENUM:
+                return label
+
+    # 3. 默认值
+    return const.DEFAULT_APPLY_PHASE  # 默认值
 
 
 class AttachedTopicAttribute:
@@ -223,19 +231,41 @@ class AttachedTopicAttribute:
         # return False
 
     def get_importance_by_labels(self, tags, labels, makers=list()) -> int:
-        importance = 2
+        importance = const.DEFAULT_PRIORITY          # 默认值为3（中）
         labels.extend(makers)
-        # logging.info(f'AAAAAA-labels:{labels}')
+
         match = self.match_tags(tags, labels, makers, is_regex=True)
         if match:
+            # 提取数字，并确保在 0-9 范围内
             importance = int(re.findall('[0-9]', match.string)[0])
+            if importance < 0 or importance > 9:
+                importance = const.DEFAULT_PRIORITY
         return importance
 
     def get_execution_type(self, labels=[], markers=[]):
-        execution_type = const.EXECUTION_MANUAL_TYPE
+        """从标签中提取执行类型"""
+        execution_type = const.EXECUTION_MANUAL_TYPE    # 默认手动
+
+        # 1. 优先检查是否有"执行类型:"标签（显式指定）
+        for label in labels:
+            if label.startswith('执行类型'):
+                if ':' in label:
+                    type_value = label.split(':', 1)[1].strip()
+                elif '：' in label:
+                    type_value = label.split('：', 1)[1].strip()
+                else:
+                    continue
+
+                if type_value in const.EXECUTION_AUTO_TYPE_TAG:
+                    return const.EXECUTION_AUTO_TYPE
+                elif type_value in const.EXECUTION_MANUAL_TYPE_TAG:
+                    return const.EXECUTION_MANUAL_TYPE
+
+        # 2. 直接匹配标签（非显式标注）
         is_match = self.match_tags(const.EXECUTION_AUTO_TYPE_TAG, labels, markers)
         if is_match:
             execution_type = const.EXECUTION_AUTO_TYPE
+
         return execution_type
 
     def match_tags(self, tags, labels=[], markers=[], is_regex=False) -> Union[Match[str], None, bool]:
@@ -272,6 +302,7 @@ class AttachedTopicAttribute:
 
     def get_testcase_type(self, labels):
         """从标签中提取用例类型"""
+        # 1. 优先检查是否有"用例类型:"标签（显式指定）
         type_tag = const.TESTCASE_TYPE_TAG
         for label in labels:
             if label.startswith(type_tag):
@@ -286,4 +317,10 @@ class AttachedTopicAttribute:
                 # 验证是否在枚举范围内
                 if type_value in const.TESTCASE_TYPE_MAPPING:
                     return type_value
-        return '功能测试'  # 默认值
+
+        # 2. 直接匹配枚举值
+        for label in labels:
+            if label in const.TESTCASE_TYPE_ENUM:
+                return label
+
+        return const.DEFAULT_TESTCASE_TYPE  # 默认值

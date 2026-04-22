@@ -35,6 +35,8 @@ TESTCASE_IGNORE_TAGS = ['ignore', 'skipped']
 TESTSTEP_TAG = '执行步骤'
 EXPECT_RESULT_TAG = '预期结果'
 
+
+# ==================== 用例类型相关 ====================
 # 用例类型标签
 TESTCASE_TYPE_TAG = '用例类型'
 
@@ -53,6 +55,8 @@ TESTCASE_TYPE_ENUM = [
 # 用例类型默认值
 DEFAULT_TESTCASE_TYPE = '功能测试'
 
+
+# ==================== 适用阶段相关 ====================
 # 适用阶段标签
 APPLY_PHASE_TAG = '适用阶段'
 
@@ -90,11 +94,23 @@ APPLY_PHASE_ZENTAO_MAPPING = {
     '版本验证阶段': 'version'
 }
 
-IMPORTANCE_TAGS = ['P[0-9]', 'priority-[0-9]']
+# ==================== 优先级相关 ====================
+# 优先级标签匹配规则
+IMPORTANCE_TAGS = ['P[0-9]', 'priority-[0-9]', 'priority [0-9]']
 
-EXECUTION_AUTO_TYPE_TAG = ['自动', 'auto', 'automate', 'automation']
+# 默认优先级
+DEFAULT_PRIORITY = 3  # 默认为"中"
+
+
+# ==================== 执行类型相关 ====================
+# 执行类型标签
 EXECUTION_MANUAL_TYPE_TAG = ['手动', '手工', 'manual']
+EXECUTION_AUTO_TYPE_TAG = ['自动', 'auto', 'automate', 'automation']
+
+# 手动
 EXECUTION_MANUAL_TYPE = 1
+
+# 自动
 EXECUTION_AUTO_TYPE = 2
 
 config = {'sep': '<font color="red"> >> </font>',

@@ -37,7 +37,7 @@ class ParseNew(ParseXmind):
     def parse_testsuite(self, suite_dict):
         testsuite = TestSuite()
         suite_attached_topic = AttachedTopicAttribute(suite_dict)
-        testsuite.name = suite_attached_topic.title
+        testsuite.name = suite_attached_topic.title                     # 模块名
         testsuite.details = suite_attached_topic.note
         testsuite.testcase_list = []
         # sub_attached_topics：层级2

@@ -164,7 +164,7 @@ def allowed_file(filename):
 def check_file_name(name):
     secured = secure_filename(name)
     if not secured:
-        secured = re.sub('[^\w\d]+', '_', name)  # only keep letters and digits from file name
+        secured = re.sub(r'[^\w\d]+', '_', name)  # only keep letters and digits from file name
         assert secured, 'Unable to parse file name: {}!'.format(name)
     return secured + '.xmind'
 
@@ -285,17 +285,21 @@ def preview_file_v2(filename):
 
     if not exists(full_path):
         abort(404)
-    # suite_count = count_testsuits(full_path)
+
     testcases = get_testcase_list(full_path)
     for testcase in testcases:
         case_name = testcase['name']
         importance = testcase['importance']
-        if importance == 0:
-            testcase['priority'] = 'High'
-        elif importance == 1:
-            testcase['priority'] = 'Medium'
+        testcase['priority'] = str(importance)
+
+        # 提取所属产品和所属模块
+        suite_full = testcase.get('suite', '')
+        if '::' in suite_full:
+            testcase['product'] = suite_full.split('::', 1)[0]  # 产品名
+            testcase['module'] = suite_full.split('::', 1)[1]   # 模块名
         else:
-            testcase['priority'] = 'Low'
+            testcase['product'] = testcase.get('product', '')
+            testcase['module'] = suite_full
 
         category = testcase['category'].replace('<b>', '').replace('</b>', '').replace('<font color="red">',
                                                                                        '').replace('</font>', '')
@@ -306,7 +310,6 @@ def preview_file_v2(filename):
             if len(expectedresults) == 0:
                 expectedresults_v2 = '-'
             step['expectedresults_v2'] = expectedresults_v2
-
 
     test_suites = defaultdict(list)
 
