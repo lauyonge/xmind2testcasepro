@@ -1,9 +1,9 @@
 __title__ = 'xmind2testcasepro'
 __description__ = 'XMind2TestCasePro基于XMind2TestCase做二次开发，提供了一个高效测试用例设计的解决方案！'
 __keywords__ = 'xmind2testCase, testcase, test, testing, xmind, 思维导图, XMind思维导图',
-__url__ = 'https://github.com/goehls/xmind2testcasepro'
-__author__ = '波小艺'
-__author_email__ = '15813380401@163.com'
-__version__ = '2.0.1'
+__url__ = 'https://github.com/lauyonge/xmind2testcasepro'
+__author__ = 'liuyang'
+__author_email__ = '835386823@qq.com'
+__version__ = '2.1.0'
 __license__ = 'MIT'
 __cake__ = u'\u2728 \U0001f370 \u2728'

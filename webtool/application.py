@@ -17,6 +17,8 @@ from werkzeug.utils import secure_filename
 from xmind2testcase.services import get_testcase_list, count_testsuits
 from xmind2testcase.testlink import xmind_to_testlink_xml_file
 from xmind2testcase.zentao import xmind_to_zentao_csv_file
+from testcase2xmind.parser import parse_zentao_csv
+from testcase2xmind.generator import generate_xmind
 
 here = os.path.abspath(os.path.dirname(__file__))
 log_file = os.path.join(here, 'running.log')
@@ -41,7 +43,9 @@ werkzeug_logger.setLevel(logging.DEBUG)
 
 # global variable
 UPLOAD_FOLDER = os.path.join(here, 'uploads')
-ALLOWED_EXTENSIONS = ['xmind']
+ALLOWED_EXTENSIONS = ['xmind', 'csv']
+ALLOWED_XMIND_EXTENSIONS = ['xmind']
+ALLOWED_CSV_EXTENSIONS = ['csv']
 DEBUG = True
 DATABASE = os.path.join(here, 'data.db3')
 HOST = '0.0.0.0'
@@ -161,6 +165,76 @@ def allowed_file(filename):
         filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
 
+def allowed_xmind_file(filename):
+    return '.' in filename and \
+        filename.rsplit('.', 1)[1] in ALLOWED_XMIND_EXTENSIONS
+
+
+def allowed_csv_file(filename):
+    return '.' in filename and \
+        filename.rsplit('.', 1)[1] in ALLOWED_CSV_EXTENSIONS
+
+
+def insert_csv_record(csv_name, note=''):
+    c = g.db.cursor()
+    now = str(arrow.now())
+    sql = "INSERT INTO csv_records (name,create_on,note) VALUES (?,?,?)"
+    c.execute(sql, (csv_name, now, str(note)))
+    g.db.commit()
+
+
+def get_csv_records(limit=8):
+    short_name_length = 120
+    c = g.db.cursor()
+    sql = "select * from csv_records where is_deleted<>1 order by id desc limit {}".format(int(limit))
+    c.execute(sql)
+    rows = c.fetchall()
+
+    for row in rows:
+        name, short_name, create_on, note, record_id = row[1], row[1], row[2], row[3], row[0]
+        if len(name) > short_name_length:
+            short_name = name[:short_name_length] + '...'
+        create_on = arrow.get(create_on).humanize()
+        yield short_name, name, create_on, note, record_id
+
+
+def delete_csv_record(filename, record_id):
+    csv_file = join(app.config['UPLOAD_FOLDER'], filename)
+    xmind_file = join(app.config['UPLOAD_FOLDER'], filename[:-4] + '.xmind')
+
+    for f in [csv_file, xmind_file]:
+        if exists(f):
+            os.remove(f)
+
+    c = g.db.cursor()
+    sql = 'UPDATE csv_records SET is_deleted=1 WHERE id = ?'
+    c.execute(sql, (record_id,))
+    g.db.commit()
+
+
+def save_csv_file(file):
+    if file and allowed_csv_file(file.filename):
+        filename = file.filename
+        upload_to = join(app.config['UPLOAD_FOLDER'], filename)
+
+        if exists(upload_to):
+            filename = '{}_{}.csv'.format(filename[:-4], arrow.now().strftime('%Y%m%d_%H%M%S'))
+            upload_to = join(app.config['UPLOAD_FOLDER'], filename)
+
+        file.save(upload_to)
+        insert_csv_record(filename)
+        g.is_success = True
+        return filename
+
+    elif file.filename == '':
+        g.is_success = False
+        g.error = "Please select a file!"
+
+    else:
+        g.is_success = False
+        g.invalid_files.append(file.filename)
+
+
 def check_file_name(name):
     secured = secure_filename(name)
     if not secured:
@@ -202,7 +276,12 @@ def verify_uploaded_files(files):
         g.error = "Invalid file: {}".format(','.join(g.invalid_files))
 
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/', methods=['GET'])
+def welcome():
+    return render_template('index.html', records=list(get_records()))
+
+
+@app.route('/xmind2testcase', methods=['GET', 'POST'])
 def index(download_xml=None):
     g.invalid_files = []
     g.error = None
@@ -228,7 +307,7 @@ def index(download_xml=None):
     if g.filename:
         return redirect(url_for('preview_file_v2', filename=g.filename))
     else:
-        return render_template('index.html', records=list(get_records()))
+        return render_template('xmind_upload.html', records=list(get_records()))
 
 
 @app.route('/uploads/<filename>')
@@ -328,7 +407,115 @@ def delete_file(filename, record_id):
         abort(404)
     else:
         delete_record(filename, record_id)
-    return redirect('/')
+    return redirect(url_for('index'))
+
+
+@app.route('/testcase2xmind', methods=['GET', 'POST'])
+def testcase2xmind_index():
+    g.invalid_files = []
+    g.error = None
+    g.filename = None
+
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            return redirect(request.url)
+
+        file = request.files['file']
+
+        if file.filename == '':
+            return redirect(request.url)
+
+        g.filename = save_csv_file(file)
+        delete_records()
+
+    if g.filename:
+        return redirect(url_for('testcase2xmind_preview', filename=g.filename))
+    else:
+        return render_template('testcase2xmind.html', records=list(get_csv_records()))
+
+
+@app.route('/testcase2xmind/preview/<filename>')
+def testcase2xmind_preview(filename):
+    full_path = join(app.config['UPLOAD_FOLDER'], filename)
+
+    if not exists(full_path):
+        abort(404)
+
+    try:
+        encodings = ['utf-8', 'gbk']
+        structure = None
+        last_error = None
+        for enc in encodings:
+            try:
+                structure = parse_zentao_csv(full_path, encoding=enc)
+                if len(structure) > 0:
+                    break
+            except UnicodeDecodeError as e:
+                last_error = e
+                continue
+        if structure is None or len(structure) == 0:
+            raise last_error or Exception("无法解析CSV文件，请检查编码格式")
+    except Exception as e:
+        return render_template('testcase2xmind_preview.html',
+                               name=filename, error=str(e),
+                               modules=None, total_cases=0)
+
+    modules = []
+    total_cases = 0
+    for product, product_modules in structure.items():
+        for module_name, cases in product_modules.items():
+            case_count = len(cases)
+            total_cases += case_count
+            modules.append({
+                'product': product,
+                'name': module_name,
+                'case_count': case_count,
+                'cases': cases
+            })
+
+    return render_template('testcase2xmind_preview.html',
+                           name=filename, modules=modules,
+                           total_cases=total_cases, error=None)
+
+
+@app.route('/testcase2xmind/<filename>/to/xmind')
+def download_xmind_from_csv(filename):
+    full_path = join(app.config['UPLOAD_FOLDER'], filename)
+
+    if not exists(full_path):
+        abort(404)
+
+    try:
+        encodings = ['utf-8', 'gbk']
+        structure = None
+        for enc in encodings:
+            try:
+                structure = parse_zentao_csv(full_path, encoding=enc)
+                if len(structure) > 0:
+                    break
+            except UnicodeDecodeError:
+                continue
+        if structure is None or len(structure) == 0:
+            abort(404)
+
+        output_file = join(app.config['UPLOAD_FOLDER'], filename[:-4] + '.xmind')
+        generate_xmind(structure, output_file)
+        result_filename = os.path.basename(output_file)
+    except Exception as e:
+        logging.exception(f'转换CSV到XMind失败: {e}')
+        abort(404)
+
+    return send_from_directory(app.config['UPLOAD_FOLDER'], result_filename, as_attachment=True)
+
+
+@app.route('/testcase2xmind/delete/<filename>/<int:record_id>')
+def delete_csv_file(filename, record_id):
+    full_path = join(app.config['UPLOAD_FOLDER'], filename)
+    if not exists(full_path):
+        abort(404)
+    else:
+        delete_csv_record(filename, record_id)
+    return redirect(url_for('testcase2xmind_index'))
 
 
 @app.errorhandler(Exception)

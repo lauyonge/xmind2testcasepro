@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TestCase → XMind</title>
+    <link rel="shortcut icon" href="{{ url_for('static',filename='favicon.ico') }}" type="image/x-icon"/>
+    <link rel="stylesheet" type="text/css" media="all" href="{{ url_for('static',filename='css/pure-min.css') }}">
+    <link rel="stylesheet" type="text/css" media="all" href="{{ url_for('static',filename='css/custom.css') }}">
+</head>
+<body>
+<div class="splash-container">
+    <div class="splash">
+        <h1>
+            TestCase to XMind
+        </h1>
+        <div class="splash-head">
+            <div style="margin-bottom: 20px;">
+                <a href="{{ url_for('welcome') }}" style="color: #fff; text-decoration: underline;">← 返回模式选择</a>
+            </div>
+            <div class="select-xmind splash-subhead">
+                <form method="post" enctype="multipart/form-data">
+                    <label id="file-label" for="file">
+                        --> 点击这里选择禅道导出的CSV文件 <--
+                    </label>
+                    <input id="file" accept=".csv" type="file" name="file" required/><br>
+                    <input type="submit" class="pure-button" value="开始转换"/>
+                </form>
+            </div>
+            {% if records %}
+                <table class="pure-table recent-xminds">
+                    <thead>
+                    <tr>
+                        <th width="60%">NAME</th>
+                        <th width="17%">TIME</th>
+                        <th>ACTIONS</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for record in records %}
+                        <tr>
+                            <td title="{{ record[1] }}"> {{ record[0] }}</td>
+                            <td>{{ record[2] }}</td>
+                            <td><a href="{{ url_for('uploaded_file',filename=record[1]) }}">CSV</a> |
+                                <a href="{{ url_for('download_xmind_from_csv',filename=record[1]) }}">XMIND</a> |
+                                <a href="{{ url_for('testcase2xmind_preview',filename=record[1]) }}">PREVIEW</a> |
+                                <a href="{{ url_for('delete_csv_file',filename=record[1], record_id=record[4]) }}">DELETE</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>上传禅道导出的CSV测试用例文件，将其转换回XMind思维导图，便于用例的可视化管理和评审。</p>
+            {% endif %}
+        </div>
+        <div class="footer-home">
+            <a href="{{ url_for('static', filename='guide/index.html') }}" target="_blank">User Guide</a> |
+            <a href="https://github.com/lauyonge/xmind2testcasepro" target="_blank">Report Issue</a> |
+            Powered by <a href="https://github.com/lauyonge/xmind2testcasepro" target="_blank">XMind2TestCasePro</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById("file").addEventListener("change", function () {
+        if (this.value) {
+            document.getElementById("file-label").innerHTML = this.value.split("\\").pop();
+        }
+    });
+</script>
+</body>
+</html>

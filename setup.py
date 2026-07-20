@@ -93,6 +93,7 @@ setup(
     entry_points={  # custom
         'console_scripts': [
             'xmind2testcase=xmind2testcase.cli:cli_main',
+            'testcase2xmind=testcase2xmind.cli:main',
         ]
     },
     cmdclass={

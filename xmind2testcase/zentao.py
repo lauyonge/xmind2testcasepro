@@ -59,8 +59,8 @@ def gen_a_testcase_row(testcase_dict):
     case_step, case_expected_result = gen_case_step_and_expected_result(testcase_dict['steps'])
     case_keyword = ''
     case_priority = gen_case_priority(testcase_dict['importance'])
-    case_type  = testcase_dict.get('testcase_type', '功能测试')  # 使用新字段
-    case_apply_phase = testcase_dict.get('apply_phase', '功能测试阶段')  # 使用新字段
+    case_type  = testcase_dict.get('testcase_type', '功能测试')
+    case_apply_phase = testcase_dict.get('apply_phase', '功能测试阶段')
     execution_type = gen_execution_type(testcase_dict['execution_type'])
     row = [product, case_module, case_title, case_precontion, case_step, case_expected_result, case_keyword, case_priority, execution_type, case_type, case_apply_phase]
     return row
@@ -80,10 +80,12 @@ def gen_case_step_and_expected_result(steps):
     case_expected_result = ''
 
     for step_dict in steps:
-        case_step += str(step_dict['step_number']) + '. ' + step_dict['actions'].replace('\n', '').strip() + '\n'
-        case_expected_result += str(step_dict['step_number']) + '. ' + \
-            '------'.join(step_dict['expectedresults']).replace('\n', '').strip() + '\n' \
-            if step_dict.get('expectedresults', '') else ''
+        # 步骤
+        case_step += f"{step_dict['step_number']}. {step_dict['actions'].replace('\n', '').strip()}\n"
+        # 预期结果
+        expected_list = step_dict.get('expectedresults') or []                              # 当值为 None 时返回空列表，join 就不会报错
+        expected = '------'.join(expected_list).replace('\n', '').strip()
+        case_expected_result += f"{step_dict['step_number']}. {expected}\n"                 # 没有预期结果时，添加一个空行占位
 
     return case_step, case_expected_result
 

@@ -7,3 +7,13 @@ create table records (
   note text,
   is_deleted integer DEFAULT 0
 );
+
+drop table if exists csv_records;
+
+create table csv_records (
+  id integer primary key autoincrement,
+  name text not null,
+  create_on text not null,
+  note text,
+  is_deleted integer DEFAULT 0
+);

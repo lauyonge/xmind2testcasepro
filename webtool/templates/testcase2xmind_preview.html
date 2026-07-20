@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ name }} | TestCase2XMind Preview</title>
+    <link rel="shortcut icon" href="{{ url_for('static',filename='favicon.ico') }}" type="image/x-icon"/>
+    <link rel="stylesheet" type="text/css" media="all" href="{{ url_for('static',filename='css/pure-min.css') }}">
+    <link rel="stylesheet" type="text/css" media="all" href="{{ url_for('static',filename='css/custom.css') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .header-bar {
+            background: #00b36b;
+            color: white;
+            padding: 15px 30px;
+            margin-bottom: 20px;
+        }
+        .header-bar h2 {
+            margin: 0;
+        }
+        .header-bar a {
+            color: white;
+            text-decoration: underline;
+        }
+        .module-card {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            padding: 15px;
+        }
+        .module-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #00b36b;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .module-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+        }
+        .module-stats {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .case-item {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+        .case-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 1.05em;
+        }
+        .case-meta {
+            color: #888;
+            font-size: 0.85em;
+            margin-bottom: 8px;
+        }
+        .case-meta span {
+            margin-right: 15px;
+        }
+        .case-section {
+            margin-top: 8px;
+        }
+        .case-section-label {
+            font-weight: bold;
+            color: #555;
+            font-size: 0.9em;
+        }
+        .case-section-content {
+            color: #666;
+            font-size: 0.9em;
+            margin-left: 10px;
+        }
+        .step-item {
+            margin: 4px 0;
+        }
+        .download-section {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .btn-download {
+            background: #00b36b;
+            color: white;
+            padding: 12px 30px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-download:hover {
+            background: #009955;
+            text-decoration: none;
+            color: white;
+        }
+        .summary-bar {
+            background: #e8f5e9;
+            border: 1px solid #a5d6a7;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-around;
+        }
+        .summary-item {
+            text-align: center;
+        }
+        .summary-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #00b36b;
+        }
+        .summary-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .error-box {
+            background: #ffebee;
+            border: 1px solid #ef9a9a;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+<div class="header-bar">
+    <h2>TestCase → XMind 预览</h2>
+    <div>
+        <a href="{{ url_for('welcome') }}">返回首页</a> |
+        <a href="{{ url_for('testcase2xmind_index') }}">重新上传</a>
+    </div>
+</div>
+
+<div style="padding: 0 30px;">
+    {% if error %}
+        <div class="error-box">
+            <strong>解析失败：</strong>{{ error }}
+        </div>
+    {% else %}
+        <div class="summary-bar">
+            <div class="summary-item">
+                <div class="summary-number">{{ modules|length }}</div>
+                <div class="summary-label">模块数</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-number">{{ total_cases }}</div>
+                <div class="summary-label">用例总数</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-number">{{ name }}</div>
+                <div class="summary-label">文件名</div>
+            </div>
+        </div>
+
+        <div class="download-section">
+            <a href="{{ url_for('download_xmind_from_csv', filename=name) }}" class="btn-download">
+                📥 下载 XMind 文件
+            </a>
+        </div>
+
+        {% for module in modules %}
+            <div class="module-card">
+                <div class="module-header">
+                    <div class="module-title">
+                        📁 {{ module.product }} / {{ module.name }}
+                    </div>
+                    <div class="module-stats">
+                        {{ module.case_count }} 条用例
+                    </div>
+                </div>
+
+                {% for case in module.cases %}
+                    <div class="case-item">
+                        <div class="case-title">📝 {{ case.title }}</div>
+                        <div class="case-meta">
+                            <span>优先级: {{ case.priority }}</span>
+                            <span>类型: {{ case.type }}</span>
+                            <span>阶段: {{ case.stage }}</span>
+                            {% if case.keywords %}<span>关键词: {{ case.keywords }}</span>{% endif %}
+                        </div>
+                        {% if case.preconditions %}
+                            <div class="case-section">
+                                <span class="case-section-label">前置条件:</span>
+                                <div class="case-section-content">{{ case.preconditions }}</div>
+                            </div>
+                        {% endif %}
+                        {% if case.steps %}
+                            <div class="case-section">
+                                <span class="case-section-label">测试步骤:</span>
+                                <div class="case-section-content">
+                                    {% for i in range(case.steps|length) %}
+                                        <div class="step-item">
+                                            <strong>{{ i + 1 }}.</strong> {{ case.steps[i] }}
+                                            {% if i < case.expected|length %}
+                                                <br/><em style="color: #00b36b;">预期: {{ case.expected[i] }}</em>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+
+        <div class="download-section">
+            <a href="{{ url_for('download_xmind_from_csv', filename=name) }}" class="btn-download">
+                📥 下载 XMind 文件
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+</body>
+</html>
